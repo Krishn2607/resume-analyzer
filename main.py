@@ -49,3 +49,28 @@ analyzer.display()
 
 bad=Resumeanalyzer("fake_file.txt")
 bad.load()
+
+from groq import Groq
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def talk_to_claude(message):
+    try:
+        client = Groq(
+            api_key=os.getenv("GROQ_API_KEY")
+        )
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "user", "content": message}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error: {e}"
+
+
+result = talk_to_claude("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
+print(result)
