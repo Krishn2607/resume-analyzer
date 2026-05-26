@@ -1,0 +1,7 @@
+John Doe
+Software Engineer
+
+Skills: Python, Java, SQL, Git
+Experience: 2 years at TCS as Software Developer
+Education: B.Tech Computer Science 2023
+Certifications: AWS Cloud Practitioner
