@@ -21,3 +21,31 @@ def read_file(filepath):
     
 result=read_file("sample_resume.txt")
 print(result)
+
+class Resumeanalyzer:
+    def __init__(self,filepath):
+        self.filepath=filepath
+        self.content=None
+        
+    def load(self):
+        try:
+            with open(self.filepath,"r") as f:
+                self.content=f.read()
+            print("Resume loaded successfully!")
+        except FileNotFoundError:
+            print("Error: Resume file not found!")
+        except Exception as e:
+            print(f"Something went wrong: {e}")
+            
+    def display(self):
+        if self.content:
+            print(self.content)
+        else:
+            print("No resume loaded yet!")
+        
+analyzer=Resumeanalyzer("sample_resume.txt")
+analyzer.load()
+analyzer.display()
+
+bad=Resumeanalyzer("fake_file.txt")
+bad.load()
