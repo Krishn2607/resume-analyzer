@@ -56,7 +56,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def talk_to_claude(message):
+def talk_to(message):
     try:
         client = Groq(
             api_key=os.getenv("GROQ_API_KEY")
@@ -72,5 +72,5 @@ def talk_to_claude(message):
         return f"Error: {e}"
 
 
-result = talk_to_claude("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
+result = talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
 print(result)
