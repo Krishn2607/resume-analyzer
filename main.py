@@ -1,91 +1,99 @@
+# ===== RESUME ANALYZER =====
+# Week 1 Complete
+
+# ---- IMPORTS (all at top) ----
+import re
+import os
+from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
+
 name = "Resume Analyzer"
 print(f"Welcome to {name}")
 
 def greet_user(name):
     print(f"Hello {name}, let's analyze your resume!")
 
-skills=["Python","SQL","Machine Learning"]
-person={"name":"John","experience":2}
+skills = ["Python", "SQL", "Machine Learning"]
+person = {"name": "John", "experience": 2}
 
 greet_user("Your Name")
 print(skills)
 print(person)
 
+#File Reading 
 def read_file(filepath):
     try:
-        with open(filepath,"r") as f:
-            content=f.read()
+        with open(filepath, "r") as f:
+            content = f.read()
         return content
     except FileNotFoundError:
-        return "Error:File Not Found!"
-    
+        return "Error: File Not Found!"
+
 result=read_file("sample_resume.txt")
 print(result)
 
-class Resumeanalyzer:
-    def __init__(self,filepath):
-        self.filepath=filepath
-        self.content=None
-        
+#OOP & Error Handling ----
+class ResumeAnalyzer:
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.content = None
+
     def load(self):
         try:
-            with open(self.filepath,"r") as f:
-                self.content=f.read()
+            with open(self.filepath, "r") as f:
+                self.content = f.read()
             print("Resume loaded successfully!")
         except FileNotFoundError:
             print("Error: Resume file not found!")
         except Exception as e:
             print(f"Something went wrong: {e}")
-            
+
     def display(self):
         if self.content:
             print(self.content)
         else:
             print("No resume loaded yet!")
-        
-analyzer=Resumeanalyzer("sample_resume.txt")
+
+analyzer=ResumeAnalyzer("sample_resume.txt")
 analyzer.load()
 analyzer.display()
 
-bad=Resumeanalyzer("fake_file.txt")
+bad=ResumeAnalyzer("fake_file.txt")
 bad.load()
 
-from groq import Groq
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
+#Groq AI API 
 def talk_to(message):
     try:
-        client = Groq(
-            api_key=os.getenv("GROQ_API_KEY")
-        )
-        response = client.chat.completions.create(
+        client=Groq(api_key=os.getenv("GROQ_API_KEY"))
+        response=client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "user", "content": message}
-            ]
+            messages=[{"role": "user", "content": message}]
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"Error: {e}"
 
-
-result = talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
+result=talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
 print(result)
 
-
-import re
-
+#Text Cleaning 
 def clean_text(text):
-    text = re.sub(r' +', ' ', text)
-    text = re.sub(r'\n+', '\n', text)
-    text = text.strip()
+    text=re.sub(r' +', ' ', text)
+    text=re.sub(r'\n+', '\n', text)
+    text=text.strip()
     return text
 
-# Test it
-raw_text = read_file("sample_resume.txt")
-cleaned = clean_text(raw_text)
+raw_text=read_file("sample_resume.txt")
+cleaned=clean_text(raw_text)
 print("Cleaned resume:")
 print(cleaned)
+
+
+print("\n===== RESUME ANALYZER =====")
+print("Week 1 complete! Here's what this project can do:")
+print("✅ Read resume files")
+print("✅ Clean extracted text")
+print("✅ Talk to AI")
+print("============================\n")
