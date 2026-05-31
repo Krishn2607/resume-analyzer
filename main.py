@@ -74,3 +74,18 @@ def talk_to(message):
 
 result = talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
 print(result)
+
+
+import re
+
+def clean_text(text):
+    text = re.sub(r' +', ' ', text)
+    text = re.sub(r'\n+', '\n', text)
+    text = text.strip()
+    return text
+
+# Test it
+raw_text = read_file("sample_resume.txt")
+cleaned = clean_text(raw_text)
+print("Cleaned resume:")
+print(cleaned)
