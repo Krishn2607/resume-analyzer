@@ -6,6 +6,7 @@ import re
 import os
 from groq import Groq
 from dotenv import load_dotenv
+import fitz
 
 load_dotenv()
 
@@ -84,7 +85,27 @@ def clean_text(text):
     text=re.sub(r'\n+', '\n', text)
     text=text.strip()
     return text
+#PDF text extraction
+def extract_text_from_pdf(pdf_path):
+    try:
+        doc = fitz.open(pdf_path)
+        full_text = ""
+        for page in doc:
+            full_text += page.get_text()
+        doc.close()
+        if not full_text.strip():
+            return "No text found — PDF may be image only"
+        return full_text
+    except FileNotFoundError:
+        return "Error: PDF file not found"
+    except Exception as e:
+        return f"Error: {e}"
 
+# Test it
+pdf_text = extract_text_from_pdf("test_resume.pdf")
+cleaned = clean_text(pdf_text)
+print("Extracted and cleaned PDF text:")
+print(cleaned)
 raw_text=read_file("sample_resume.txt")
 cleaned=clean_text(raw_text)
 print("Cleaned resume:")
