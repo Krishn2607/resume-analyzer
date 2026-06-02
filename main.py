@@ -79,12 +79,22 @@ def talk_to(message):
 result=talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
 print(result)
 
-#Text Cleaning 
 def clean_text(text):
-    text=re.sub(r' +', ' ', text)
-    text=re.sub(r'\n+', '\n', text)
-    text=text.strip()
-    return text
+    # Handle special PDF characters
+    text = text.replace('\xa0', ' ')
+    text = text.replace('\u2022', '-')
+    text = text.replace('\uf0b7', '-')
+    text = text.replace('\t', ' ')
+    
+    # Remove multiple spaces
+    text = re.sub(r' +', ' ', text)
+    
+    # Clean line by line
+    lines = text.split('\n')
+    lines = [line.strip() for line in lines]
+    lines = [line for line in lines if line]
+    
+    return '\n'.join(lines)
 #PDF text extraction
 def extract_text_from_pdf(pdf_path):
     try:
@@ -118,3 +128,15 @@ print("✅ Read resume files")
 print("✅ Clean extracted text")
 print("✅ Talk to AI")
 print("============================\n")
+
+
+print("\n---Improved Text Cleaning ---")
+
+# Test with real PDF
+pdf_text = extract_text_from_pdf("test_resume.pdf")
+cleaned = clean_text(pdf_text)
+
+print(f"Original length: {len(pdf_text)} characters")
+print(f"Cleaned length: {len(cleaned)} characters")
+print("\nCleaned text preview (first 300 chars):")
+print(cleaned[:300])
