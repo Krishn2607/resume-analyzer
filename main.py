@@ -4,9 +4,10 @@
 # ---- IMPORTS (all at top) ----
 import re
 import os
+import json
+import fitz
 from groq import Groq
 from dotenv import load_dotenv
-import fitz
 
 load_dotenv()
 
@@ -111,6 +112,50 @@ def extract_text_from_pdf(pdf_path):
     except Exception as e:
         return f"Error: {e}"
 
+# DAY 11 — AI Resume Analysis
+def analyze_resume(resume_text, job_description):
+    try:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+        system_prompt = """You are an expert resume analyzer with 10 years 
+of experience hiring for tech companies.
+Analyze resumes professionally and return structured JSON only."""
+
+        user_prompt = f"""Analyze this resume against the job description.
+
+RESUME:
+{resume_text}
+
+JOB DESCRIPTION:
+{job_description}
+
+Return ONLY a JSON object with exactly these fields:
+- match_score: number from 0 to 100
+- top_strengths: list of exactly 3 strings
+- skill_gaps: list of exactly 3 strings
+- recommendation: one sentence string
+
+Return ONLY the JSON. No explanation. No markdown. No extra text."""
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=1000,
+            temperature=0.1,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        ai_text = response.choices[0].message.content
+        data = json.loads(ai_text)
+        return data
+
+    except json.JSONDecodeError:
+        return {"error": "AI returned invalid JSON"}
+    except Exception as e:
+        return {"error": str(e)}
+
 # Test it
 pdf_text = extract_text_from_pdf("test_resume.pdf")
 cleaned = clean_text(pdf_text)
@@ -140,3 +185,28 @@ print(f"Original length: {len(pdf_text)} characters")
 print(f"Cleaned length: {len(cleaned)} characters")
 print("\nCleaned text preview (first 300 chars):")
 print(cleaned[:300])
+
+# Test resume analysis
+print("\n--- AI Resume Analysis ---")
+
+pdf_text = extract_text_from_pdf("test_resume.pdf")
+cleaned = clean_text(pdf_text)
+
+job_description = """
+We are looking for a Software Engineer with:
+- 2+ years of Python experience
+- Experience with REST APIs
+- SQL database knowledge
+- Problem solving skills
+- Good communication
+"""
+
+result = analyze_resume(cleaned, job_description)
+
+if "error" in result:
+    print(f"Error: {result['error']}")
+else:
+    print(f"Match Score: {result['match_score']}%")
+    print(f"Top Strengths: {result['top_strengths']}")
+    print(f"Skill Gaps: {result['skill_gaps']}")
+    print(f"Recommendation: {result['recommendation']}")
