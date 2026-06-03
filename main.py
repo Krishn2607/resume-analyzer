@@ -155,6 +155,102 @@ Return ONLY the JSON. No explanation. No markdown. No extra text."""
         return {"error": "AI returned invalid JSON"}
     except Exception as e:
         return {"error": str(e)}
+    
+# DAY 12 — Improved prompt engineering
+
+def clean_json_response(text):
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
+def validate_response(data):
+    required_keys = ["match_score", "top_strengths", "skill_gaps", "recommendation"]
+    for key in required_keys:
+        if key not in data:
+            return False, f"Missing key: {key}"
+    if not isinstance(data["match_score"], (int, float)):
+        return False, "match_score must be a number"
+    if not isinstance(data["top_strengths"], list):
+        return False, "top_strengths must be a list"
+    if not isinstance(data["skill_gaps"], list):
+        return False, "skill_gaps must be a list"
+    if not isinstance(data["recommendation"], str):
+        return False, "recommendation must be a string"
+    return True, "Valid"
+
+
+def analyze_resume_v2(resume_text, job_description, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+            system_prompt = """You are a Senior Technical Recruiter at a top tech company 
+with 10 years of experience hiring software engineers.
+You are known for accurate, fair, and detailed resume evaluations.
+Always return valid JSON only. Never add markdown or explanations."""
+
+            user_prompt = f"""Analyze this resume against the job description step by step.
+
+Step 1: Identify all technical skills in the resume.
+Step 2: Identify all required skills in the job description.
+Step 3: Compare the two lists and find matches and gaps.
+Step 4: Calculate a match percentage based on skill overlap.
+Step 5: Return your analysis as JSON.
+
+RESUME:
+{resume_text}
+
+JOB DESCRIPTION:
+{job_description}
+
+Return ONLY a JSON object in exactly this format:
+{{
+    "match_score": 75,
+    "top_strengths": ["Strength 1", "Strength 2", "Strength 3"],
+    "skill_gaps": ["Gap 1", "Gap 2", "Gap 3"],
+    "recommendation": "One sentence recommendation here."
+}}
+
+Rules:
+- match_score must be an integer between 0 and 100
+- top_strengths must have EXACTLY 3 items
+- skill_gaps must have EXACTLY 3 items
+- each item must be 1-4 words maximum
+- recommendation must be ONE sentence only
+- Return ONLY the JSON, no markdown, no explanation"""
+
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                max_tokens=1000,
+                temperature=0.1,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+            )
+
+            ai_text = response.choices[0].message.content
+            cleaned = clean_json_response(ai_text)
+            data = json.loads(cleaned)
+
+            is_valid, message = validate_response(data)
+            if is_valid:
+                return data
+            else:
+                print(f"Attempt {attempt + 1} failed validation: {message}")
+
+        except json.JSONDecodeError:
+            print(f"Attempt {attempt + 1} failed: invalid JSON")
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+
+    return {"error": "Failed after 3 attempts"}
 
 # Test it
 pdf_text = extract_text_from_pdf("test_resume.pdf")
@@ -202,6 +298,31 @@ We are looking for a Software Engineer with:
 """
 
 result = analyze_resume(cleaned, job_description)
+
+if "error" in result:
+    print(f"Error: {result['error']}")
+else:
+    print(f"Match Score: {result['match_score']}%")
+    print(f"Top Strengths: {result['top_strengths']}")
+    print(f"Skill Gaps: {result['skill_gaps']}")
+    print(f"Recommendation: {result['recommendation']}")
+    
+# DAY 12 — Test improved analysis
+print("\n--- DAY 12: Improved Prompt Engineering ---")
+
+pdf_text = extract_text_from_pdf("test_resume.pdf")
+cleaned = clean_text(pdf_text)
+
+job_description = """
+We are looking for a Software Engineer with:
+- 2+ years of Python experience
+- Experience with REST APIs
+- SQL database knowledge
+- Problem solving skills
+- Good communication
+"""
+
+result = analyze_resume_v2(cleaned, job_description)
 
 if "error" in result:
     print(f"Error: {result['error']}")
