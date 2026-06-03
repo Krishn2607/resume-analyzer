@@ -1,16 +1,17 @@
 # ===== RESUME ANALYZER =====
-# Week 1 Complete
 
-# ---- IMPORTS (all at top) ----
+# ---- IMPORTS ----
 import re
 import os
 import json
+import time
 import fitz
 from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# ---- DAY 1 & 2 — Basic Python ----
 name = "Resume Analyzer"
 print(f"Welcome to {name}")
 
@@ -24,7 +25,7 @@ greet_user("Your Name")
 print(skills)
 print(person)
 
-#File Reading 
+# ---- DAY 3 — File Reading ----
 def read_file(filepath):
     try:
         with open(filepath, "r") as f:
@@ -33,10 +34,9 @@ def read_file(filepath):
     except FileNotFoundError:
         return "Error: File Not Found!"
 
-result=read_file("sample_resume.txt")
-print(result)
+print(read_file("sample_resume.txt"))
 
-#OOP & Error Handling ----
+# ---- DAY 4 — OOP & Error Handling ----
 class ResumeAnalyzer:
     def __init__(self, filepath):
         self.filepath = filepath
@@ -58,18 +58,18 @@ class ResumeAnalyzer:
         else:
             print("No resume loaded yet!")
 
-analyzer=ResumeAnalyzer("sample_resume.txt")
+analyzer = ResumeAnalyzer("sample_resume.txt")
 analyzer.load()
 analyzer.display()
 
-bad=ResumeAnalyzer("fake_file.txt")
+bad = ResumeAnalyzer("fake_file.txt")
 bad.load()
 
-#Groq AI API 
+# ---- DAY 5 — Groq AI API ----
 def talk_to(message):
     try:
-        client=Groq(api_key=os.getenv("GROQ_API_KEY"))
-        response=client.chat.completions.create(
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": message}]
         )
@@ -77,26 +77,29 @@ def talk_to(message):
     except Exception as e:
         return f"Error: {e}"
 
-result=talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!")
-print(result)
+print(talk_to("Hello! I am a CS student building an AI Resume Analyzer. Say hello back in one sentence!"))
 
+# ---- DAY 6 & 10 — Text Cleaning ----
 def clean_text(text):
-    # Handle special PDF characters
     text = text.replace('\xa0', ' ')
     text = text.replace('\u2022', '-')
     text = text.replace('\uf0b7', '-')
     text = text.replace('\t', ' ')
-    
-    # Remove multiple spaces
     text = re.sub(r' +', ' ', text)
-    
-    # Clean line by line
     lines = text.split('\n')
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
-    
     return '\n'.join(lines)
-#PDF text extraction
+
+# ---- DAY 7 — Week 1 Summary ----
+print("\n===== RESUME ANALYZER =====")
+print("Week 1 complete! Here's what this project can do:")
+print("✅ Read resume files")
+print("✅ Clean extracted text")
+print("✅ Talk to AI")
+print("============================\n")
+
+# ---- DAY 9 — PDF Text Extraction ----
 def extract_text_from_pdf(pdf_path):
     try:
         doc = fitz.open(pdf_path)
@@ -112,7 +115,16 @@ def extract_text_from_pdf(pdf_path):
     except Exception as e:
         return f"Error: {e}"
 
-# DAY 11 — AI Resume Analysis
+# ---- DAY 10 — Test Cleaning ----
+print("\n--- Text Cleaning Test ---")
+pdf_text = extract_text_from_pdf("test_resume.pdf")
+cleaned = clean_text(pdf_text)
+print(f"Original length: {len(pdf_text)} characters")
+print(f"Cleaned length: {len(cleaned)} characters")
+print("\nCleaned text preview (first 300 chars):")
+print(cleaned[:300])
+
+# ---- DAY 11 — Basic AI Analysis ----
 def analyze_resume(resume_text, job_description):
     try:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -155,9 +167,8 @@ Return ONLY the JSON. No explanation. No markdown. No extra text."""
         return {"error": "AI returned invalid JSON"}
     except Exception as e:
         return {"error": str(e)}
-    
-# DAY 12 — Improved prompt engineering
 
+# ---- DAY 12 — Improved Prompt Engineering ----
 def clean_json_response(text):
     text = text.strip()
     if text.startswith("```json"):
@@ -252,82 +263,77 @@ Rules:
 
     return {"error": "Failed after 3 attempts"}
 
-# Test it
-pdf_text = extract_text_from_pdf("test_resume.pdf")
-cleaned = clean_text(pdf_text)
-print("Extracted and cleaned PDF text:")
-print(cleaned)
-raw_text=read_file("sample_resume.txt")
-cleaned=clean_text(raw_text)
-print("Cleaned resume:")
-print(cleaned)
+# ---- DAY 13 — Full Pipeline ----
+def process_resume(pdf_path, job_description):
+    if not pdf_path:
+        return {"error": "No PDF path provided"}
+    if not job_description:
+        return {"error": "No job description provided"}
+    if not pdf_path.endswith(".pdf"):
+        return {"error": "File must be a PDF"}
+
+    pdf_text = extract_text_from_pdf(pdf_path)
+    if "Error" in pdf_text:
+        return {"error": pdf_text}
+
+    cleaned = clean_text(pdf_text)
+    if not cleaned:
+        return {"error": "No text could be extracted from PDF"}
+
+    result = analyze_resume_v2(cleaned, job_description)
+    return result
 
 
-print("\n===== RESUME ANALYZER =====")
-print("Week 1 complete! Here's what this project can do:")
-print("✅ Read resume files")
-print("✅ Clean extracted text")
-print("✅ Talk to AI")
-print("============================\n")
+def print_result(result):
+    print("=" * 50)
+    if "error" in result:
+        print(f"Error: {result['error']}")
+    else:
+        print(f"Match Score    : {result['match_score']}%")
+        print(f"Top Strengths  : {result['top_strengths']}")
+        print(f"Skill Gaps     : {result['skill_gaps']}")
+        print(f"Recommendation : {result['recommendation']}")
+    print("=" * 50)
 
 
-print("\n---Improved Text Cleaning ---")
+# ---- DAY 13 — Pipeline Tests ----
+print("\n--- DAY 13: Full Pipeline ---")
 
-# Test with real PDF
-pdf_text = extract_text_from_pdf("test_resume.pdf")
-cleaned = clean_text(pdf_text)
-
-print(f"Original length: {len(pdf_text)} characters")
-print(f"Cleaned length: {len(cleaned)} characters")
-print("\nCleaned text preview (first 300 chars):")
-print(cleaned[:300])
-
-# Test resume analysis
-print("\n--- AI Resume Analysis ---")
-
-pdf_text = extract_text_from_pdf("test_resume.pdf")
-cleaned = clean_text(pdf_text)
-
-job_description = """
+job_desc_python = """
 We are looking for a Software Engineer with:
-- 2+ years of Python experience
-- Experience with REST APIs
+- 2+ years Python experience
+- REST APIs experience
 - SQL database knowledge
 - Problem solving skills
-- Good communication
 """
 
-result = analyze_resume(cleaned, job_description)
-
-if "error" in result:
-    print(f"Error: {result['error']}")
-else:
-    print(f"Match Score: {result['match_score']}%")
-    print(f"Top Strengths: {result['top_strengths']}")
-    print(f"Skill Gaps: {result['skill_gaps']}")
-    print(f"Recommendation: {result['recommendation']}")
-    
-# DAY 12 — Test improved analysis
-print("\n--- DAY 12: Improved Prompt Engineering ---")
-
-pdf_text = extract_text_from_pdf("test_resume.pdf")
-cleaned = clean_text(pdf_text)
-
-job_description = """
-We are looking for a Software Engineer with:
-- 2+ years of Python experience
-- Experience with REST APIs
-- SQL database knowledge
-- Problem solving skills
-- Good communication
+job_desc_security = """
+We are looking for a Cybersecurity Analyst with:
+- Network security experience
+- IBM certifications
+- Risk management skills
+- System administration
 """
 
-result = analyze_resume_v2(cleaned, job_description)
+print("\nTest 1 — Valid PDF + Python job:")
+start = time.time()
+result = process_resume("test_resume.pdf", job_desc_python)
+end = time.time()
+print_result(result)
+print(f"Time taken: {end - start:.2f} seconds")
 
-if "error" in result:
-    print(f"Error: {result['error']}")
-else:
-    print(f"Match Score: {result['match_score']}%")
-    print(f"Top Strengths: {result['top_strengths']}")
-    print(f"Skill Gaps: {result['skill_gaps']}")
-    print(f"Recommendation: {result['recommendation']}")
+print("\nTest 2 — Valid PDF + Security job:")
+result = process_resume("test_resume.pdf", job_desc_security)
+print_result(result)
+
+print("\nTest 3 — Wrong PDF path:")
+result = process_resume("fake.pdf", job_desc_python)
+print_result(result)
+
+print("\nTest 4 — Empty job description:")
+result = process_resume("test_resume.pdf", "")
+print_result(result)
+
+print("\nTest 5 — Wrong file type:")
+result = process_resume("sample_resume.txt", job_desc_python)
+print_result(result)
