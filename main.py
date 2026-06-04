@@ -11,6 +11,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ---- CONSTANTS ----
+MODEL_NAME = "llama-3.3-70b-versatile"
+MAX_TOKENS = 1000
+TEMPERATURE = 0.1
+MAX_RETRIES = 3
+MIN_RECOMMENDED_SCORE = 60
+MAX_TEXT_CHARS = 8000
+
 # ---- DAY 1 & 2 — Basic Python ----
 name = "Resume Analyzer"
 print(f"Welcome to {name}")
@@ -70,7 +78,7 @@ def talk_to(message):
     try:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": message}]
         )
         return response.choices[0].message.content
@@ -90,6 +98,12 @@ def clean_text(text):
     lines = [line.strip() for line in lines]
     lines = [line for line in lines if line]
     return '\n'.join(lines)
+
+# ---- DAY 15 — Text Truncation ----
+def truncate_text(text, max_chars=MAX_TEXT_CHARS):
+    if len(text) > max_chars:
+        return text[:max_chars] + "\n...[text truncated]"
+    return text
 
 # ---- DAY 7 — Week 1 Summary ----
 print("\n===== RESUME ANALYZER =====")
@@ -150,9 +164,9 @@ Return ONLY a JSON object with exactly these fields:
 Return ONLY the JSON. No explanation. No markdown. No extra text."""
 
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            max_tokens=1000,
-            temperature=0.1,
+            model=MODEL_NAME,
+            max_tokens=MAX_TOKENS,
+            temperature=TEMPERATURE,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
@@ -196,7 +210,7 @@ def validate_response(data):
     return True, "Valid"
 
 
-def analyze_resume_v2(resume_text, job_description, max_retries=3):
+def analyze_resume_v2(resume_text, job_description, max_retries=MAX_RETRIES):
     for attempt in range(max_retries):
         try:
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -237,9 +251,9 @@ Rules:
 - Return ONLY the JSON, no markdown, no explanation"""
 
             response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                max_tokens=1000,
-                temperature=0.1,
+                model=MODEL_NAME,
+                max_tokens=MAX_TOKENS,
+                temperature=TEMPERATURE,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -276,7 +290,7 @@ def process_resume(pdf_path, job_description):
     if "Error" in pdf_text:
         return {"error": pdf_text}
 
-    cleaned = clean_text(pdf_text)
+    cleaned = truncate_text(clean_text(pdf_text))
     if not cleaned:
         return {"error": "No text could be extracted from PDF"}
 
@@ -295,45 +309,110 @@ def print_result(result):
         print(f"Recommendation : {result['recommendation']}")
     print("=" * 50)
 
+# ---- DAY 14 — Parse and Structure Results ----
+def parse_analysis(result):
+    score = result.get("match_score", 0)
+    strengths = result.get("top_strengths", [])
+    gaps = result.get("skill_gaps", [])
+    recommendation = result.get("recommendation", "No recommendation available")
 
-# ---- DAY 13 — Pipeline Tests ----
-print("\n--- DAY 13: Full Pipeline ---")
+    try:
+        score = int(score)
+    except (ValueError, TypeError):
+        score = 0
 
-job_desc_python = """
-We are looking for a Software Engineer with:
-- 2+ years Python experience
-- REST APIs experience
-- SQL database knowledge
-- Problem solving skills
-"""
+    if score >= 80:
+        level = "Excellent"
+    elif score >= 60:
+        level = "Good"
+    elif score >= 40:
+        level = "Partial"
+    else:
+        level = "Poor"
 
-job_desc_security = """
-We are looking for a Cybersecurity Analyst with:
-- Network security experience
-- IBM certifications
-- Risk management skills
-- System administration
-"""
+    return {
+        "score": score,
+        "level": level,
+        "strengths": strengths,
+        "gaps": gaps,
+        "recommendation": recommendation,
+        "is_recommended": score >= MIN_RECOMMENDED_SCORE
+    }
 
-print("\nTest 1 — Valid PDF + Python job:")
-start = time.time()
-result = process_resume("test_resume.pdf", job_desc_python)
-end = time.time()
-print_result(result)
-print(f"Time taken: {end - start:.2f} seconds")
 
-print("\nTest 2 — Valid PDF + Security job:")
-result = process_resume("test_resume.pdf", job_desc_security)
-print_result(result)
+def display_analysis(parsed):
+    print("\n" + "=" * 52)
+    print("RESUME ANALYSIS REPORT".center(52))
+    print("=" * 52)
+    print(f"\n📊 Match Score : {parsed['score']}% — {parsed['level']} Match")
+    print("\n✅ TOP STRENGTHS:")
+    for i, s in enumerate(parsed['strengths'], 1):
+        print(f"   {i}. {s}")
+    print("\n❌ SKILL GAPS:")
+    for i, g in enumerate(parsed['gaps'], 1):
+        print(f"   {i}. {g}")
+    print(f"\n💡 RECOMMENDATION:")
+    print(f"   {parsed['recommendation']}")
+    print("\n" + "-" * 52)
+    if parsed['is_recommended']:
+        print("🎯 VERDICT: RECOMMENDED FOR INTERVIEW ✅".center(52))
+    else:
+        print("🎯 VERDICT: NOT RECOMMENDED AT THIS TIME ❌".center(52))
+    print("=" * 52 + "\n")
 
-print("\nTest 3 — Wrong PDF path:")
-result = process_resume("fake.pdf", job_desc_python)
-print_result(result)
+# ---- DAY 15 — Stress Test Suite ----
+def run_stress_tests():
+    print("\n" + "=" * 52)
+    print("STRESS TEST SUITE".center(52))
+    print("=" * 52)
 
-print("\nTest 4 — Empty job description:")
-result = process_resume("test_resume.pdf", "")
-print_result(result)
+    job_desc_python = """
+    We are looking for a Software Engineer with:
+    - 2+ years Python experience
+    - REST APIs experience
+    - SQL database knowledge
+    """
 
-print("\nTest 5 — Wrong file type:")
-result = process_resume("sample_resume.txt", job_desc_python)
-print_result(result)
+    job_desc_security = """
+    We are looking for a Cybersecurity Analyst with:
+    - Network security experience
+    - IBM certifications
+    - Risk management skills
+    """
+
+    tests = [
+        ("test_resume.pdf", job_desc_python, "Valid PDF + Python job"),
+        ("test_resume.pdf", job_desc_security, "Valid PDF + Security job"),
+        ("fake.pdf", job_desc_python, "Wrong PDF path"),
+        ("test_resume.pdf", "", "Empty job description"),
+        ("sample_resume.txt", job_desc_python, "Wrong file type"),
+        ("test_resume.pdf", "Python developer needed", "Very short job desc"),
+    ]
+
+    results = []
+
+    for pdf, job, label in tests:
+        result = process_resume(pdf, job)
+        if "error" in result:
+            status = "❌ ERROR"
+            detail = result["error"]
+        else:
+            parsed = parse_analysis(result)
+            status = "✅ PASS"
+            detail = f"Score: {parsed['score']}% — {parsed['level']}"
+        results.append((label, status, detail))
+
+    print("\nTest Results:")
+    print("-" * 52)
+    for label, status, detail in results:
+        print(f"{status} | {label}")
+        print(f"       {detail}")
+        print("-" * 52)
+
+    passed = sum(1 for _, s, _ in results if "PASS" in s)
+    total = len(results)
+    print(f"\nSummary: {passed}/{total} tests produced valid analysis")
+    print("=" * 52)
+
+
+run_stress_tests()
