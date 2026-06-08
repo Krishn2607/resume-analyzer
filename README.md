@@ -34,4 +34,4 @@ An AI-powered resume analyzer built with Python, Groq AI, and Streamlit.
    streamlit run app.py
 
 ## Built by
-Krishn Karelia — CS Student
+Krishn Karelia — CE Student
