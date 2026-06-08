@@ -447,10 +447,10 @@ with st.sidebar:
         <div style="text-align: center; padding: 10px 0;">
             <div style="font-size: 32px;">📄</div>
             <div style="font-size: 16px; font-weight: 700; color: #e8e8f0;">
-                Resume Analyzer
+                🚀 ResumePilot AI
             </div>
             <div style="font-size: 12px; color: #555; margin-top: 4px;">
-                Powered by Groq AI
+                AI-Powered Career Matching
             </div>
         </div>
     """, unsafe_allow_html=True)
