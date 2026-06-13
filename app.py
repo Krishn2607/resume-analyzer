@@ -299,9 +299,10 @@ def generate_pdf(parsed, job_desc_preview):
     score_style = ParagraphStyle(
         "score",
         parent=styles["Normal"],
-        fontSize=32,
+        fontSize=30,
+        leading=36,
         textColor=colors.HexColor("#6c63ff"),
-        spaceAfter=4,
+        spaceAfter=10,
         fontName="Helvetica-Bold"
     )
 
